@@ -8,7 +8,7 @@ keywords = ["no-std", "no-alloc", "embedded", "defmt", "dmx512"]
 repository = "https://github.com/TKFRvisionOfficial/dmx-rdm-rs"
 license = "MIT OR Apache-2.0"
 authors = ["TKFRvision <tkfrvision@gmx.de>"]
-categories = ["embedded", "no-std", "no-std::no-alloc"]
+categories = ["embedded", "no-std", "no-std::no-alloc", "hardware-support"]
 
 [package.metadata.docs.rs]
 all-features = true
