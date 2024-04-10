@@ -4,12 +4,13 @@ version = 3
 
 [[package]]
 name = "binary-layout"
-version = "3.2.0"
+version = "4.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa4c433028853a658404bdc739b91a0017133e65967fc3ecfdce71f6bdaea83e"
+checksum = "f558734c71cdf8f2b4d02d8324fa1cdf604c2ed49c4e2a73696af2411c6750cc"
 dependencies = [
  "doc-comment",
  "paste",
+ "thiserror",
 ]
 
 [[package]]
@@ -58,13 +59,11 @@ dependencies = [
 
 [[package]]
 name = "dmx-rdm"
-version = "0.0.8-alpha"
+version = "0.0.9-alpha"
 dependencies = [
  "binary-layout",
  "defmt",
- "fugit",
  "heapless",
- "log",
  "modular-bitfield",
 ]
 
@@ -73,21 +72,6 @@ name = "doc-comment"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fea41bba32d969b513997752735605054bc0dfa92b4c56bf1189f2e174be7a10"
-
-[[package]]
-name = "fugit"
-version = "0.3.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17186ad64927d5ac8f02c1e77ccefa08ccd9eaa314d5a4772278aa204a22f7e7"
-dependencies = [
- "gcd",
-]
-
-[[package]]
-name = "gcd"
-version = "2.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d758ba1b47b00caf47f24925c0074ecb20d6dfcffe7f6d53395c0465674841a"
 
 [[package]]
 name = "hash32"
@@ -107,12 +91,6 @@ dependencies = [
  "hash32",
  "stable_deref_trait",
 ]
-
-[[package]]
-name = "log"
-version = "0.4.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5e6163cb8c49088c2c36f57875e58ccd8c87c7427f7fbd50ea6710b2f3f2e8f"
 
 [[package]]
 name = "modular-bitfield"

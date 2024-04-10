@@ -1,4 +1,4 @@
-binary_layout::define_layout!(rdm_request_layout, BigEndian, {
+binary_layout::binary_layout!(rdm_request_layout, BigEndian, {
     start_code: u8,
     sub_start_code: u8,
     message_length: u8,
@@ -14,7 +14,7 @@ binary_layout::define_layout!(rdm_request_layout, BigEndian, {
     parameter_data_and_checksum: [u8],
 });
 
-binary_layout::define_layout!(rdm_status_message_layout, BigEndian, {
+binary_layout::binary_layout!(rdm_status_message_layout, BigEndian, {
     sub_device_id: u16,
     status_type: u8,
     status_message_id: u16,
@@ -22,7 +22,7 @@ binary_layout::define_layout!(rdm_status_message_layout, BigEndian, {
     data_value_2: u16,
 });
 
-binary_layout::define_layout!(rdm_device_info_layout, BigEndian, {
+binary_layout::binary_layout!(rdm_device_info_layout, BigEndian, {
     protocol_version: u16,
     device_model_id: u16,
     product_category: u16,
