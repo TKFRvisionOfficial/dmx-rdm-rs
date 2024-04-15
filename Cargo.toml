@@ -1,6 +1,6 @@
 [package]
 name = "dmx-rdm"
-version = "0.0.9-alpha"
+version = "0.0.10-alpha"
 edition = "2021"
 readme = "README.md"
 description = "Rust library for communicating DMX512 (ANSI E1.11) and DMX-RDM (ANSI E1.20) over a RS485 bus by using interchangeable drivers."
@@ -17,7 +17,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 heapless = "0.8"
 modular-bitfield = "0.11"
-binary-layout = { version = "4.0", default-features = false, features = [] }
+binary-layout = "~4.0.2"
 defmt = { version = "0.3", optional = true }
 
 [features]

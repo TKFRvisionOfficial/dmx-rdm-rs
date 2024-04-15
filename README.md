@@ -59,6 +59,7 @@ fn main() {
 ### Responder
 
 ```rust
+use dmx_rdm::command_class::RequestCommandClass;
 use dmx_rdm::dmx_receiver::{
   DmxReceiverContext, DmxResponderHandler, RdmResponder, RdmResponderConfig, RdmResult,
 };
@@ -68,64 +69,80 @@ use dmx_rdm::unique_identifier::UniqueIdentifier;
 use dmx_rdm_ftdi::{FtdiDriver, FtdiDriverConfig};
 
 struct RdmHandler {
-    identify: bool,
+  identify: bool,
 }
 
 const PID_IDENTIFY_DEVICE: u16 = 0x1000;
 
-impl DmxResponderHandler for RdmHandler {
-    type Error = std::fmt::Error;
+impl RdmHandler {
+  fn handle_get_identify(&self) -> RdmResult {
+    RdmResult::Acknowledged(DataPack::from_slice(&[self.identify as u8]).unwrap())
+  }
 
-    fn handle_rdm(
-        &mut self,
-        request: &RdmRequestData,
-        _: &mut DmxReceiverContext,
-    ) -> Result<RdmResult, Self::Error> {
-        match request.parameter_id {
-            PID_IDENTIFY_DEVICE => {
-                // Check if parameter data has correct size
-                if request.parameter_data.len() != 1 {
-                    return Ok(RdmResult::NotAcknowledged(
-                        NackReason::DataOutOfRange as u16,
-                    ));
-                }
-
-                // Convert identify flag to bool and set.
-                self.identify = request.parameter_data[0] != 0;
-              
-                println!("Current identify is {}", self.identify);
-
-                // Acknowledge request with an empty response.
-                Ok(RdmResult::Acknowledged(DataPack::new()))
-            },
-            _ => Ok(RdmResult::NotAcknowledged(NackReason::UnknownPid as u16)),
-        }
+  fn handle_set_identify(&mut self, parameter_data: &[u8]) -> Result<RdmResult, std::fmt::Error> {
+    // Check if the parameter data has correct size
+    if parameter_data.len() != 1 {
+      return Ok(RdmResult::NotAcknowledged(
+        NackReason::DataOutOfRange as u16,
+      ));
     }
+
+    // Convert identify flag to bool and set that in the state.
+    self.identify = parameter_data[0] != 0;
+
+    println!("Current identify is {}", self.identify);
+
+    // Acknowledge request with an empty response.
+    Ok(RdmResult::Acknowledged(DataPack::new()))
+  }
+}
+
+impl DmxResponderHandler for RdmHandler {
+  type Error = std::fmt::Error;
+
+  fn handle_rdm(
+    &mut self,
+    request: &RdmRequestData,
+    _: &mut DmxReceiverContext,
+  ) -> Result<RdmResult, Self::Error> {
+    match request.parameter_id {
+      PID_IDENTIFY_DEVICE => match request.command_class {
+        RequestCommandClass::GetCommand => Ok(self.handle_get_identify()),
+        RequestCommandClass::SetCommand => {
+          self.handle_set_identify(&request.parameter_data)
+        },
+        _ => Ok(RdmResult::NotAcknowledged(
+          NackReason::UnsupportedCommandClass as u16,
+        )),
+      },
+      _ => Ok(RdmResult::NotAcknowledged(NackReason::UnknownPid as u16)),
+    }
+  }
 }
 
 fn main() {
-    let dmx_driver = FtdiDriver::new(FtdiDriverConfig::default()).unwrap();
+  let dmx_driver = FtdiDriver::new(FtdiDriverConfig::default()).unwrap();
 
-    // Create rdm_responder with space for 32 queued messages.
-    let mut dmx_responder = RdmResponder::<_, 32>::new(
-        dmx_driver,
-        RdmResponderConfig {
-            uid: UniqueIdentifier::new(0x7FF0, 1).unwrap(),
-            // Won't add PID_IDENTIFY_DEVICE since this is a required pid.
-            supported_pids: &[],
-            rdm_receiver_metadata: Default::default(),
-        },
-    );
+  // Create rdm_responder with space for 32 queued messages.
+  let mut dmx_responder = RdmResponder::<_, 32>::new(
+    dmx_driver,
+    RdmResponderConfig {
+      uid: UniqueIdentifier::new(0x7FF0, 1).unwrap(),
+      // Won't add PID_IDENTIFY_DEVICE since this is a required pid.
+      supported_pids: &[],
+      rdm_receiver_metadata: Default::default(),
+    },
+  );
 
-    let mut rdm_handler = RdmHandler { identify: false };
+  let mut rdm_handler = RdmHandler { identify: false };
 
-    loop {
-        // poll for new packages using our handler
-        match dmx_responder.poll(&mut rdm_handler) {
-            Ok(_) => (),
-            Err(error) => println!("'{error}' during polling"),
-        }
+  loop {
+    // poll for new packages using our handler
+    match dmx_responder.poll(&mut rdm_handler) {
+      Ok(_) => (),
+      Err(error) => println!("'{error}' during polling"),
     }
+  }
 }
 ```
 

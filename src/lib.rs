@@ -56,8 +56,9 @@
 //! ## Responder
 //!
 //! ```rust
+//! use dmx_rdm::command_class::RequestCommandClass;
 //! use dmx_rdm::dmx_receiver::{
-//!   DmxReceiverContext, DmxResponderHandler, RdmResponder, RdmResponderConfig, RdmResult,
+//!     DmxReceiverContext, DmxResponderHandler, RdmResponder, RdmResponderConfig, RdmResult,
 //! };
 //! use dmx_rdm::rdm_data::RdmRequestData;
 //! use dmx_rdm::types::{DataPack, NackReason};
@@ -70,6 +71,29 @@
 //!
 //! const PID_IDENTIFY_DEVICE: u16 = 0x1000;
 //!
+//! impl RdmHandler {
+//!     fn handle_get_identify(&self) -> RdmResult {
+//!         RdmResult::Acknowledged(DataPack::from_slice(&[self.identify as u8]).unwrap())
+//!     }
+//!
+//!     fn handle_set_identify(&mut self, parameter_data: &[u8]) -> Result<RdmResult, std::fmt::Error> {
+//!         // Check if the parameter data has correct size
+//!         if parameter_data.len() != 1 {
+//!             return Ok(RdmResult::NotAcknowledged(
+//!                 NackReason::DataOutOfRange as u16,
+//!             ));
+//!         }
+//!
+//!         // Convert identify flag to bool and set that in the state.
+//!         self.identify = parameter_data[0] != 0;
+//!
+//!         println!("Current identify is {}", self.identify);
+//!
+//!         // Acknowledge request with an empty response.
+//!         Ok(RdmResult::Acknowledged(DataPack::new()))
+//!     }
+//! }
+//!
 //! impl DmxResponderHandler for RdmHandler {
 //!     type Error = std::fmt::Error;
 //!
@@ -79,21 +103,14 @@
 //!         _: &mut DmxReceiverContext,
 //!     ) -> Result<RdmResult, Self::Error> {
 //!         match request.parameter_id {
-//!             PID_IDENTIFY_DEVICE => {
-//!                 // Check if parameter data has correct size
-//!                 if request.parameter_data.len() != 1 {
-//!                     return Ok(RdmResult::NotAcknowledged(
-//!                         NackReason::DataOutOfRange as u16,
-//!                     ));
-//!                 }
-//!
-//!                 // Convert identify flag to bool and set.
-//!                 self.identify = request.parameter_data[0] != 0;
-//!
-//!                 println!("Current identify is {}", self.identify);
-//!
-//!                 // Acknowledge request with an empty response.
-//!                 Ok(RdmResult::Acknowledged(DataPack::new()))
+//!             PID_IDENTIFY_DEVICE => match request.command_class {
+//!                 RequestCommandClass::GetCommand => Ok(self.handle_get_identify()),
+//!                 RequestCommandClass::SetCommand => {
+//!                     self.handle_set_identify(&request.parameter_data)
+//!                 },
+//!                 _ => Ok(RdmResult::NotAcknowledged(
+//!                     NackReason::UnsupportedCommandClass as u16,
+//!                 )),
 //!             },
 //!             _ => Ok(RdmResult::NotAcknowledged(NackReason::UnknownPid as u16)),
 //!         }

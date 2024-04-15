@@ -4,9 +4,9 @@ version = 3
 
 [[package]]
 name = "binary-layout"
-version = "4.0.1"
+version = "4.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f558734c71cdf8f2b4d02d8324fa1cdf604c2ed49c4e2a73696af2411c6750cc"
+checksum = "66c7e8da2156abef3421f6226ef339ade8c0d157ec50932d5e624f1c6a5127b4"
 dependencies = [
  "doc-comment",
  "paste",
@@ -59,7 +59,7 @@ dependencies = [
 
 [[package]]
 name = "dmx-rdm"
-version = "0.0.9-alpha"
+version = "0.0.10-alpha"
 dependencies = [
  "binary-layout",
  "defmt",
