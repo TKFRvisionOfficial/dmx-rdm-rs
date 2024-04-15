@@ -9,6 +9,7 @@ use modular_bitfield::bitfield;
 use modular_bitfield::prelude::B12;
 
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct DeserializationError;
 
 impl core::fmt::Display for DeserializationError {
@@ -21,6 +22,7 @@ impl core::fmt::Display for DeserializationError {
 impl std::error::Error for DeserializationError {}
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum DmxStartAddress {
     /// The requested device has a dmx footprint of 0.
     NoAddress,
@@ -141,6 +143,7 @@ impl DiscoveryMuteResponse {
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum StatusType {
     StatusNone = 0x00,
@@ -189,6 +192,7 @@ impl TryFrom<u8> for StatusType {
 }
 
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct StatusMessage {
     pub sub_device_id: u16,
     pub status_type: StatusType,
@@ -238,6 +242,8 @@ impl StatusMessage {
 pub type StatusMessages = heapless::Vec<StatusMessage, RDM_MAX_STATUS_PACKAGES_PER_REQUEST>;
 pub type SupportedParameters = heapless::Vec<u16, RDM_MAX_SUPPORTED_PARAMETERS_PER_REQUEST>;
 
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct DeviceInfo {
     pub device_model_id: u16,
     pub product_category: u16,

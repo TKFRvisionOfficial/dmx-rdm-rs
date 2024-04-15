@@ -77,7 +77,7 @@
 //!     }
 //!
 //!     fn handle_set_identify(&mut self, parameter_data: &[u8]) -> Result<RdmResult, std::fmt::Error> {
-//!         // Check if the parameter data has correct size
+//!         // Check if the parameter data has the correct size
 //!         if parameter_data.len() != 1 {
 //!             return Ok(RdmResult::NotAcknowledged(
 //!                 NackReason::DataOutOfRange as u16,
