@@ -68,8 +68,8 @@ impl UniqueIdentifier {
     pub fn to_bytes(&self) -> [u8; 6] {
         let mut buffer = [0u8; 6];
 
-        buffer[2..4].copy_from_slice(&self.manufacturer_uid.to_be_bytes());
-        buffer[4..].copy_from_slice(&self.device_uid.to_be_bytes());
+        buffer[..2].copy_from_slice(&self.manufacturer_uid.to_be_bytes());
+        buffer[2..].copy_from_slice(&self.device_uid.to_be_bytes());
 
         buffer
     }
@@ -136,8 +136,8 @@ impl PackageAddress {
             Self::ManufacturerBroadcast(manufacturer_uid) => {
                 let mut buffer = [0u8; 6];
 
-                buffer[2..4].copy_from_slice(&manufacturer_uid.to_be_bytes());
-                buffer[4..].copy_from_slice(&u32::MAX.to_be_bytes());
+                buffer[..2].copy_from_slice(&manufacturer_uid.to_be_bytes());
+                buffer[2..].copy_from_slice(&u32::MAX.to_be_bytes());
 
                 buffer
             },

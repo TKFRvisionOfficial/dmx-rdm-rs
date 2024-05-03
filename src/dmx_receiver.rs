@@ -324,10 +324,38 @@ impl<D: DmxReceiver + RdmControllerDriver, const MQ_SIZE: usize> RdmResponder<D,
             _ => return Err(PollingError::NotMatching),
         };
 
+        match request.destination_uid {
+            PackageAddress::ManufacturerBroadcast(manufacturer_uid) => {
+                if manufacturer_uid != self.uid.manufacturer_id() {
+                    return Ok(());
+                }
+            },
+            PackageAddress::Device(device_uid) => {
+                if self.uid != device_uid {
+                    return Ok(());
+                }
+            },
+            _ => {},
+        }
+
         let response = match request.parameter_id {
             pids::DISC_UNIQUE_BRANCH => {
                 if request.command_class == RequestCommandClass::DiscoveryCommand {
-                    if !self.discovery_muted {
+                    if request.parameter_data.len() != 12 {
+                        return Err(PollingError::WrongPackageSize);
+                    }
+
+                    let lower_bound: u64 = PackageAddress::from_bytes(
+                        &request.parameter_data[..6].try_into().unwrap(),
+                    )
+                    .into();
+                    let upper_bound: u64 = PackageAddress::from_bytes(
+                        &request.parameter_data[6..].try_into().unwrap(),
+                    )
+                    .into();
+                    let own_uid: u64 = self.uid.into();
+
+                    if !self.discovery_muted && own_uid >= lower_bound && own_uid <= upper_bound {
                         self.send_rdm_discovery_response()?;
                     }
 
@@ -389,6 +417,7 @@ impl<D: DmxReceiver + RdmControllerDriver, const MQ_SIZE: usize> RdmResponder<D,
                     DmxError::DriverError(driver_error) => PollingError::DriverError(driver_error),
                 })?;
         }
+
         Ok(())
     }
 
@@ -412,11 +441,13 @@ impl<D: DmxReceiver + RdmControllerDriver, const MQ_SIZE: usize> RdmResponder<D,
     ) -> Option<RdmResponseData> {
         verify_get_request!(request, self);
 
+        let software_version_label = self.rdm_receiver_metadata.software_version_label;
+
         request
             .build_response(
                 ResponseType::ResponseTypeAck,
                 DataPack::from_slice(
-                    &self.rdm_receiver_metadata.software_version_label.as_bytes()[..32],
+                    &software_version_label.as_bytes()[..software_version_label.len().min(32)],
                 )
                 .unwrap(),
                 self.get_message_count(),
