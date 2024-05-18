@@ -126,9 +126,13 @@ pub enum RdmResult {
 
 /// A context object for accessing the state of a [RdmResponder] from a [DmxResponderHandler].
 pub struct DmxReceiverContext<'a> {
+    /// The start address of the dmx space.
     pub dmx_start_address: &'a mut DmxStartAddress,
+    /// The amount of dmx address allocated.
     pub dmx_footprint: &'a mut u16,
+    /// true if the device won't respond to discovery requests.
     pub discovery_muted: &'a mut bool,
+    /// The amount of messages in the message queue.
     pub message_count: u8,
 }
 
@@ -197,9 +201,14 @@ macro_rules! verify_get_request {
             return None;
         }
 
+        let message_count = $funcer.get_message_count();
+
         if $request.command_class != RequestCommandClass::GetCommand {
-            let message_count = $funcer.get_message_count();
             return build_nack!($request, NackReason::UnsupportedCommandClass, message_count).ok();
+        }
+
+        if $request.sub_device != 0 {
+            return build_nack!($request, NackReason::SubDeviceOutOfRange, message_count).ok();
         }
     };
 }
@@ -261,11 +270,16 @@ impl<D: DmxReceiver + RdmControllerDriver, const MQ_SIZE: usize> RdmResponder<D,
 
     /// Call this function as often as you can or on a serial interrupt. It will
     /// receive a package and handle it.
+    ///
+    /// Returns false if no package was received.
     pub fn poll<HandlerError>(
         &mut self,
         handler: &mut dyn DmxResponderHandler<Error = HandlerError>,
-    ) -> Result<(), PollingError<D::DriverError, HandlerError>> {
-        let package = self.driver.receive_package()?;
+    ) -> Result<bool, PollingError<D::DriverError, HandlerError>> {
+        let package = match self.driver.receive_package() {
+            Err(DmxError::TimeoutError) => return Ok(false),
+            result => result?,
+        };
 
         if package.is_empty() {
             return Err(PollingError::WrongPackageSize);
@@ -283,7 +297,7 @@ impl<D: DmxReceiver + RdmControllerDriver, const MQ_SIZE: usize> RdmResponder<D,
             },
         }
 
-        Ok(())
+        Ok(true)
     }
 
     /// Get the message queue that contains the results of [RdmResult::AcknowledgedTimer] packages.
@@ -336,6 +350,17 @@ impl<D: DmxReceiver + RdmControllerDriver, const MQ_SIZE: usize> RdmResponder<D,
                 }
             },
             _ => {},
+        }
+
+        if request.command_class == RequestCommandClass::DiscoveryCommand
+            && ![
+                pids::DISC_UNIQUE_BRANCH,
+                pids::DISC_MUTE,
+                pids::DISC_UN_MUTE,
+            ]
+            .contains(&request.parameter_id)
+        {
+            return Ok(());
         }
 
         let response = match request.parameter_id {
@@ -406,6 +431,10 @@ impl<D: DmxReceiver + RdmControllerDriver, const MQ_SIZE: usize> RdmResponder<D,
         };
 
         if let Some(response_data) = response {
+            if request.destination_uid.is_broadcast() {
+                return Ok(());
+            }
+
             self.driver
                 .send_rdm(RdmData::Response(response_data))
                 .map_err(|error| match error {
@@ -424,12 +453,20 @@ impl<D: DmxReceiver + RdmControllerDriver, const MQ_SIZE: usize> RdmResponder<D,
     fn handle_disc_mute(&mut self, request: &RdmRequestData) -> Option<RdmResponseData> {
         verify_disc_request!(request, self);
 
+        if !request.parameter_data.is_empty() {
+            return None;
+        }
+
         self.discovery_muted = true;
         self.build_disc_mute_response(request).ok()
     }
 
     fn handle_disc_unmute(&mut self, request: &RdmRequestData) -> Option<RdmResponseData> {
         verify_disc_request!(request, self);
+
+        if !request.parameter_data.is_empty() {
+            return None;
+        }
 
         self.discovery_muted = false;
         self.build_disc_mute_response(request).ok()
@@ -520,6 +557,14 @@ impl<D: DmxReceiver + RdmControllerDriver, const MQ_SIZE: usize> RdmResponder<D,
                 self.message_queue.len() as u8,
             ),
             RequestCommandClass::SetCommand => 'set_command: {
+                if request.parameter_data.len() != 2 {
+                    break 'set_command build_nack!(
+                        request,
+                        NackReason::FormatError,
+                        message_count
+                    );
+                }
+
                 let dmx_start_address = match DmxStartAddress::deserialize(&request.parameter_data)
                 {
                     Ok(start_address) => start_address,
@@ -528,7 +573,7 @@ impl<D: DmxReceiver + RdmControllerDriver, const MQ_SIZE: usize> RdmResponder<D,
                             request,
                             NackReason::DataOutOfRange,
                             message_count
-                        )
+                        );
                     },
                 };
 
@@ -558,7 +603,7 @@ impl<D: DmxReceiver + RdmControllerDriver, const MQ_SIZE: usize> RdmResponder<D,
                     product_category: self.rdm_receiver_metadata.product_category,
                     software_version: self.rdm_receiver_metadata.software_version_id,
                     dmx_footprint: self.dmx_footprint,
-                    dmx_personality: 0,
+                    dmx_personality: 1,
                     dmx_start_address: self.dmx_start_address.clone(),
                     sub_device_count: 0,
                     sensor_count: 0,
@@ -666,7 +711,7 @@ impl<D: DmxReceiver + RdmControllerDriver, const MQ_SIZE: usize> RdmResponder<D,
 
         let status_type_requested = match StatusType::deserialize(&request.parameter_data) {
             Ok(status) => status,
-            Err(_) => return build_nack!(request, NackReason::DataOutOfRange, message_count).ok(),
+            Err(_) => return build_nack!(request, NackReason::FormatError, message_count).ok(),
         };
 
         match status_type_requested {
