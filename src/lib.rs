@@ -161,6 +161,9 @@ mod layouts;
 mod pids;
 pub mod rdm_data;
 pub mod rdm_packages;
+/// Parser for handling rdm requests without an underlying driver.
+/// Mainly for highly interrupt driven applications.
+pub mod rdm_responder;
 pub mod rdm_types;
 pub mod types;
 pub mod unique_identifier;

@@ -8,7 +8,7 @@ use crate::dmx_uart_driver::{
 };
 use crate::rdm_data::{deserialize_discovery_response, RdmData, RdmDeserializationError};
 use crate::unique_identifier::UniqueIdentifier;
-use crate::utils::calculate_checksum;
+use crate::utils::{calculate_checksum, encode_disc_unique};
 
 #[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -163,7 +163,8 @@ impl<D: DmxRespUartDriver + DmxRecvUartDriver> RdmControllerDriver for D {
             ));
         }
 
-        bytes_read += self.read_frames_no_break(&mut receive_buffer[3..message_length], 0)?;
+        bytes_read +=
+            self.read_frames_no_break(&mut receive_buffer[3..message_length], READ_TIMEOUT_US)?;
         let response = RdmData::deserialize(&receive_buffer[..bytes_read])
             .map_err(DmxError::DeserializationError)?;
 
@@ -237,19 +238,7 @@ impl<D: DmxRecvUartDriver> DmxReceiver for D {
             DMX_MAX_PACKAGE_SIZE
         };
 
-        bytes_read += self.read_frames_no_break(&mut buffer[3..message_size], 0)?;
+        bytes_read += self.read_frames_no_break(&mut buffer[3..message_size], READ_TIMEOUT_US)?;
         Ok(DmxFrame::from_slice(&buffer[..bytes_read]).unwrap())
-    }
-}
-
-fn encode_disc_unique(src: &[u8], dest: &mut [u8]) {
-    assert!(
-        src.len() * 2 <= dest.len(),
-        "Dest has to be twice the size of src."
-    );
-
-    for (index, byte) in src.iter().enumerate() {
-        dest[index * 2] = byte | 0xAA;
-        dest[index * 2 + 1] = byte | 0x55;
     }
 }

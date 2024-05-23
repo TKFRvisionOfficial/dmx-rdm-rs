@@ -320,11 +320,11 @@ impl<D: RdmControllerDriver> DmxController<D> {
     /// Set the identify state in the rdm device (led for searching)
     pub fn rdm_set_identify(
         &mut self,
-        uid: UniqueIdentifier,
+        uid: PackageAddress,
         enabled: bool,
     ) -> Result<(), RdmResponseError<D::DriverError>> {
         self.rdm_set(RdmRequest {
-            destination_uid: PackageAddress::Device(uid),
+            destination_uid: uid,
             parameter_id: pids::IDENTIFY_DEVICE,
             data: heapless::Vec::from_slice(&[enabled as u8]).unwrap(),
         })?;

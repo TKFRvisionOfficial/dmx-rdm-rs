@@ -87,3 +87,15 @@ pub(crate) fn calculate_checksum(data: &[u8]) -> u16 {
 
     checksum
 }
+
+pub(crate) fn encode_disc_unique(src: &[u8], dest: &mut [u8]) {
+    assert!(
+        src.len() * 2 <= dest.len(),
+        "Dest has to be twice the size of src."
+    );
+
+    for (index, byte) in src.iter().enumerate() {
+        dest[index * 2] = byte | 0xAA;
+        dest[index * 2 + 1] = byte | 0x55;
+    }
+}
