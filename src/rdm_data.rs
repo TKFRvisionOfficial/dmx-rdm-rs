@@ -123,17 +123,24 @@ impl core::fmt::Display for RdmDeserializationError {
 #[cfg(feature = "std")]
 impl std::error::Error for RdmDeserializationError {}
 
+/// The result of deserializing an RDM package
 #[derive(Debug)]
 pub enum RdmData {
+    /// The deserialized RDM package is a request
     Request(RdmRequestData),
+    /// The deserialized RDM package is a response
     Response(RdmResponseData),
 }
 
 impl RdmData {
+    /// Convenience function for deserializing an RDM package.
+    /// Refer to [deserialize_rdm_data].
     pub fn deserialize(buf: &[u8]) -> Result<Self, RdmDeserializationError> {
         deserialize_rdm_data(buf)
     }
 
+    /// Convenience function for serializing an RDM package.
+    /// Refer to [serialize_rdm_data].
     pub fn serialize(&self) -> BinaryRdmPackage {
         serialize_rdm_data(self)
     }
@@ -141,6 +148,7 @@ impl RdmData {
 
 /// Deserialize rdm data.
 /// Buffer must be between 22 and 257 bytes.
+/// This won't work for discovery responses. For this refer to [deserialize_discovery_response].
 pub fn deserialize_rdm_data(buffer: &[u8]) -> Result<RdmData, RdmDeserializationError> {
     let buffer_size = buffer.len();
 
@@ -153,7 +161,6 @@ pub fn deserialize_rdm_data(buffer: &[u8]) -> Result<RdmData, RdmDeserialization
     }
 
     // Exclude checksum field
-    // Will evaluate correctness later
     let expected_checksum = calculate_checksum(&buffer[..buffer_size - 2]);
     let actual_checksum =
         u16::from_be_bytes(buffer[buffer_size - 2..buffer_size].try_into().unwrap());
@@ -246,7 +253,7 @@ pub fn serialize_rdm_data(rdm_data: &RdmData) -> BinaryRdmPackage {
     memory_view.start_code_mut().write(SC_RDM);
     memory_view.sub_start_code_mut().write(SC_SUB_MESSAGE);
 
-    // 24 is the size of all the fields besides parameter_data except the checksum
+    // 24 is the size of all the fields besides parameter_data excluding the checksum
     memory_view
         .message_length_mut()
         .write(parameter_data_length as u8 + 24);

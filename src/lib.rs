@@ -44,12 +44,12 @@
 //! }
 //!
 //! for device in devices_found {
-//!   match dmx_controller.rdm_set_identify(device, true) {
-//!     Ok(_) => println!("Activated identify for device_uid {device}"),
-//!     Err(error) => {
-//!       println!("Activating identify for device_uid {device} failed with {error}")
-//!     },
-//!   }
+//!     match dmx_controller.rdm_set_identify(PackageAddress::Device(device), true) {
+//!         Ok(_) => println!("Activated identify for device_uid {device}"),
+//!         Err(error) => {
+//!             println!("Activating identify for device_uid {device} failed with {error}")
+//!         },
+//!     }
 //! }
 //! ```
 //!
@@ -57,10 +57,9 @@
 //!
 //! ```rust
 //! use dmx_rdm::command_class::RequestCommandClass;
-//! use dmx_rdm::dmx_receiver::{
-//!     DmxReceiverContext, DmxResponderHandler, RdmResponder, RdmResponderConfig, RdmResult,
-//! };
+//! use dmx_rdm::dmx_receiver::{DmxResponderHandler, RdmResponder};
 //! use dmx_rdm::rdm_data::RdmRequestData;
+//! use dmx_rdm::rdm_responder::{DmxReceiverContext, RdmResponderConfig, RdmResult};
 //! use dmx_rdm::types::{DataPack, NackReason};
 //! use dmx_rdm::unique_identifier::UniqueIdentifier;
 //! use dmx_rdm_ftdi::{FtdiDriver, FtdiDriverConfig};

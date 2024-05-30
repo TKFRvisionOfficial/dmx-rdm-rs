@@ -64,6 +64,9 @@ struct UnfinishedRequest {
     iteration: u16,
 }
 
+/// The RDM answer from the [RdmResponderPackageHandler]
+#[allow(clippy::large_enum_variant)]
+#[derive(Debug, Clone)]
 pub enum RdmAnswer {
     /// Has to be sent with an uart break
     Response(RdmResponseData),
@@ -137,6 +140,12 @@ pub struct RdmResponderConfig {
     pub rdm_receiver_metadata: RdmReceiverMetadata,
 }
 
+/// A structure to handle RDM requests and generate the responses. This
+/// struct is used by the [crate::dmx_receiver::RdmResponder], but can be used
+/// without it in order to realize custom dmx setups that can't rely on the
+/// dmx_driver pattern.
+/// MQ_SIZE specifies the size of the message queue and the status vector. MQ_SIZE cannot be greater
+/// than 255.
 pub struct RdmResponderPackageHandler<const MQ_SIZE: usize> {
     /// The start of the dmx address space.
     pub dmx_start_address: DmxStartAddress,
@@ -156,6 +165,11 @@ pub struct RdmResponderPackageHandler<const MQ_SIZE: usize> {
 impl<const MQ_SIZE: usize> RdmResponderPackageHandler<MQ_SIZE> {
     /// Creates a new [RdmResponderPackageHandler].
     pub fn new(config: RdmResponderConfig) -> Self {
+        assert!(
+            MQ_SIZE <= u8::MAX as usize,
+            "Message queue size cannot be greater than 255."
+        );
+
         Self {
             supported_pids: config.supported_pids,
             dmx_start_address: DmxStartAddress::NoAddress,
@@ -201,6 +215,8 @@ impl<const MQ_SIZE: usize> RdmResponderPackageHandler<MQ_SIZE> {
         &mut self.status_vec
     }
 
+    /// Method to handle a received and deserialized RdmPackage from the RDM-Controller.
+    /// This method will return the response package that has to be sent back to the RDM-Controller.
     pub fn handle_rdm_request<HandlerError>(
         &mut self,
         request: RdmRequestData,

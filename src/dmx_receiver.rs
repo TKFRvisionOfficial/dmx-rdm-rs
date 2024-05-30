@@ -127,6 +127,8 @@ pub trait DmxResponderHandler {
 }
 
 /// The structure to build an RDM Receiver.
+/// MQ_SIZE specifies the size of the message queue and the status vector. MQ_SIZE cannot be greater
+/// than 255.
 pub struct RdmResponder<D: DmxReceiver + RdmControllerDriver, const MQ_SIZE: usize> {
     driver: D,
     rdm_receiver_handler: RdmResponderPackageHandler<MQ_SIZE>,
