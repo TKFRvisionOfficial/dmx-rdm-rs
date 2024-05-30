@@ -36,7 +36,7 @@ impl UniqueIdentifier {
         })
     }
 
-    pub fn manufacturer_id(&self) -> u16 {
+    pub fn manufacturer_uid(&self) -> u16 {
         self.manufacturer_uid
     }
 

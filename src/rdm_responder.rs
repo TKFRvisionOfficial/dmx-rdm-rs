@@ -215,6 +215,19 @@ impl<const MQ_SIZE: usize> RdmResponderPackageHandler<MQ_SIZE> {
         &mut self.status_vec
     }
 
+    /// Gets a context object that contains references to the current internal state
+    /// of some of the parameters.
+    pub fn get_context(&mut self) -> DmxReceiverContext {
+        let message_count = self.get_message_count();
+
+        DmxReceiverContext {
+            dmx_start_address: &mut self.dmx_start_address,
+            dmx_footprint: &mut self.dmx_footprint,
+            discovery_muted: &mut self.discovery_muted,
+            message_count,
+        }
+    }
+
     /// Method to handle a received and deserialized RdmPackage from the RDM-Controller.
     /// This method will return the response package that has to be sent back to the RDM-Controller.
     pub fn handle_rdm_request<HandlerError>(
@@ -224,7 +237,7 @@ impl<const MQ_SIZE: usize> RdmResponderPackageHandler<MQ_SIZE> {
     ) -> Result<RdmAnswer, HandlerError> {
         match request.destination_uid {
             PackageAddress::ManufacturerBroadcast(manufacturer_uid) => {
-                if manufacturer_uid != self.uid.manufacturer_id() {
+                if manufacturer_uid != self.uid.manufacturer_uid() {
                     return Ok(RdmAnswer::NoResponse);
                 }
             },
@@ -622,16 +635,5 @@ impl<const MQ_SIZE: usize> RdmResponderPackageHandler<MQ_SIZE> {
         }
 
         parameter_data
-    }
-
-    pub fn get_context(&mut self) -> DmxReceiverContext {
-        let message_count = self.get_message_count();
-
-        DmxReceiverContext {
-            dmx_start_address: &mut self.dmx_start_address,
-            dmx_footprint: &mut self.dmx_footprint,
-            discovery_muted: &mut self.discovery_muted,
-            message_count,
-        }
     }
 }
