@@ -134,10 +134,8 @@ impl PackageAddress {
         match self {
             Self::Broadcast => [0xFFu8; 6],
             Self::ManufacturerBroadcast(manufacturer_uid) => {
-                let mut buffer = [0u8; 6];
-
+                let mut buffer = [0xFFu8; 6];
                 buffer[..2].copy_from_slice(&manufacturer_uid.to_be_bytes());
-                buffer[2..].copy_from_slice(&u32::MAX.to_be_bytes());
 
                 buffer
             },
