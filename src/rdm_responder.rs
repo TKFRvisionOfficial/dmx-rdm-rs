@@ -270,33 +270,7 @@ impl<const MQ_SIZE: usize> RdmResponderPackageHandler<MQ_SIZE> {
             pids::DMX_START_ADDRESS => self.handle_dmx_start_address(&request),
             pids::QUEUED_MESSAGE => self.handle_queued_message(&request),
             pids::STATUS_MESSAGES => self.handle_status_messages(&request),
-            _ => match handler.handle_rdm(&request, &mut self.get_context())? {
-                RdmResult::Acknowledged(response_data) => request.build_response(
-                    ResponseType::ResponseTypeAck,
-                    response_data,
-                    self.get_message_count(),
-                ),
-                RdmResult::AcknowledgedOverflow(response_data) => request.build_response(
-                    ResponseType::ResponseTypeAckOverflow,
-                    response_data,
-                    self.get_message_count(),
-                ),
-                RdmResult::NotAcknowledged(nack_reason) => request.build_response(
-                    ResponseType::ResponseTypeNackReason,
-                    DataPack::from_slice(&nack_reason.to_be_bytes()).unwrap(),
-                    self.get_message_count(),
-                ),
-                RdmResult::AcknowledgedTimer(timer) => request.build_response(
-                    ResponseType::ResponseTypeAckTimer,
-                    DataPack::from_slice(&timer.to_be_bytes()).unwrap(),
-                    self.get_message_count(),
-                ),
-                RdmResult::NoResponse => {
-                    return Ok(RdmAnswer::NoResponse);
-                },
-                RdmResult::Custom(response_data) => Ok(response_data),
-            }
-            .ok(),
+            _ => self.handle_other_request(&request, handler)?,
         };
 
         // Was this a broadcast?
@@ -306,6 +280,41 @@ impl<const MQ_SIZE: usize> RdmResponderPackageHandler<MQ_SIZE> {
 
         // No response since the request is a broadcast
         Ok(RdmAnswer::NoResponse)
+    }
+
+    fn handle_other_request<HandlerError>(
+        &mut self,
+        request: &RdmRequestData,
+        handler: &mut dyn RdmResponderHandlerFunc<Error = HandlerError>,
+    ) -> Result<Option<RdmResponseData>, HandlerError> {
+        let response = match handler.handle_rdm(request, &mut self.get_context())? {
+            RdmResult::Acknowledged(response_data) => request.build_response(
+                ResponseType::ResponseTypeAck,
+                response_data,
+                self.get_message_count(),
+            ),
+            RdmResult::AcknowledgedOverflow(response_data) => request.build_response(
+                ResponseType::ResponseTypeAckOverflow,
+                response_data,
+                self.get_message_count(),
+            ),
+            RdmResult::NotAcknowledged(nack_reason) => request.build_response(
+                ResponseType::ResponseTypeNackReason,
+                DataPack::from_slice(&nack_reason.to_be_bytes()).unwrap(),
+                self.get_message_count(),
+            ),
+            RdmResult::AcknowledgedTimer(timer) => request.build_response(
+                ResponseType::ResponseTypeAckTimer,
+                DataPack::from_slice(&timer.to_be_bytes()).unwrap(),
+                self.get_message_count(),
+            ),
+            RdmResult::NoResponse => {
+                return Ok(None);
+            },
+            RdmResult::Custom(response_data) => Ok(response_data),
+        };
+
+        Ok(response.ok())
     }
 
     fn handle_disc_unique_branch(&self, request: &RdmRequestData) -> RdmAnswer {
