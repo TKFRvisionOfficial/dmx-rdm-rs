@@ -87,12 +87,12 @@ macro_rules! build_nack {
 }
 
 macro_rules! verify_get_request {
-    ($request:path, $funcer:path) => {
+    ($request:path, $responder:path) => {
         if $request.destination_uid.is_broadcast() {
             return None;
         }
 
-        let message_count = $funcer.get_message_count();
+        let message_count = $responder.get_message_count();
 
         if $request.command_class != RequestCommandClass::GetCommand {
             return build_nack!($request, NackReason::UnsupportedCommandClass, message_count).ok();
@@ -105,9 +105,9 @@ macro_rules! verify_get_request {
 }
 
 macro_rules! verify_disc_request {
-    ($request:path, $funcer:path) => {
+    ($request:path, $responder:path) => {
         if $request.command_class != RequestCommandClass::DiscoveryCommand {
-            let message_count = $funcer.get_message_count();
+            let message_count = $responder.get_message_count();
             return build_nack!($request, NackReason::UnsupportedCommandClass, message_count).ok();
         }
     };

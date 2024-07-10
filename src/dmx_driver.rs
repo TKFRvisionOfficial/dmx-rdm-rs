@@ -36,6 +36,12 @@ impl<E: core::fmt::Display> core::fmt::Display for DmxError<E> {
     }
 }
 
+impl<E> From<E> for DmxError<E> {
+    fn from(value: E) -> Self {
+        Self::DriverError(value)
+    }
+}
+
 #[cfg(feature = "std")]
 impl<E: core::fmt::Display + core::fmt::Debug> std::error::Error for DmxError<E> {}
 
