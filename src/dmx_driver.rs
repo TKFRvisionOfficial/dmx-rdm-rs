@@ -10,7 +10,7 @@ use crate::rdm_data::{deserialize_discovery_response, RdmData, RdmDeserializatio
 use crate::unique_identifier::UniqueIdentifier;
 use crate::utils::{calculate_checksum, encode_disc_unique};
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum DmxError<E> {
     /// There were fewer bytes written to the uart then there should have been.
@@ -45,7 +45,7 @@ impl<E> From<E> for DmxError<E> {
 #[cfg(feature = "std")]
 impl<E: core::fmt::Display + core::fmt::Debug> std::error::Error for DmxError<E> {}
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum DiscoveryOption {
     /// No device responded to the discovery request.
     /// There aren't any devices in the specified unique id range.
@@ -187,10 +187,7 @@ impl<D: DmxRespUartDriver + DmxRecvUartDriver> RdmControllerDriver for D {
         }?;
 
         if bytes_read < RDM_DISCOVERY_RESPONSE_SIZE {
-            // Is this a collision?
-            return Err(DmxError::DeserializationError(
-                RdmDeserializationError::BufferTooSmall,
-            ));
+            return Ok(DiscoveryOption::Collision);
         }
 
         Ok(
@@ -212,7 +209,9 @@ impl<D: DmxRespUartDriver + DmxRecvUartDriver> RdmControllerDriver for D {
         let checksum = calculate_checksum(&frame_buffer[8..20]);
         encode_disc_unique(&checksum.to_be_bytes(), &mut frame_buffer[20..24]);
 
-        self.write_frames_no_break(&frame_buffer)?;
+        if self.write_frames_no_break(&frame_buffer)? != frame_buffer.len() {
+            return Err(DmxError::UartOverflow);
+        }
 
         Ok(())
     }
@@ -225,7 +224,7 @@ pub trait DmxReceiver: ControllerDriverErrorDef {
 
 impl<D: DmxRecvUartDriver> DmxReceiver for D {
     fn receive_package(&mut self) -> Result<DmxFrame, DmxError<D::DriverError>> {
-        const READ_TIMEOUT_US: u32 = 2800;
+        const READ_TIMEOUT_US: u32 = 1800;
 
         let mut buffer = [0u8; DMX_MAX_PACKAGE_SIZE];
         let mut bytes_read = self.read_frames(&mut buffer[0..3], READ_TIMEOUT_US)?;

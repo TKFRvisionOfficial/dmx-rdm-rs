@@ -140,8 +140,9 @@ pub struct RdmResponderConfig {
     pub rdm_receiver_metadata: RdmReceiverMetadata,
 }
 
-/// A structure to handle RDM requests and generate the responses. This
-/// struct is used by the [crate::dmx_receiver::RdmResponder], but can be used
+/// A structure to handle RDM requests and generate the responses.
+///
+/// This struct is used by the [crate::dmx_receiver::RdmResponder], but can be used
 /// without it in order to realize custom dmx setups that can't rely on the
 /// dmx_driver pattern.
 /// MQ_SIZE specifies the size of the message queue and the status vector. MQ_SIZE cannot be greater

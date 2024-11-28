@@ -78,7 +78,7 @@ pub struct RdmResponseData {
     pub parameter_data: DataPack,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum RdmDeserializationError {
     /// Buffer must be at least 22 bytes

@@ -2,6 +2,7 @@ use crate::consts::BROADCAST_UID;
 use crate::rdm_types::DeserializationError;
 
 /// The unique id that is used as a source id in the packages.
+///
 /// There shouldn't be multiple devices with same unique id.
 /// The manufacturer uids are assigned by the esta.
 /// [more information](https://tsp.esta.org/tsp/working_groups/CP/mfctrIDs.php)
@@ -25,7 +26,7 @@ impl defmt::Format for UniqueIdentifier {
 }
 
 impl UniqueIdentifier {
-    pub fn new(manufacturer_uid: u16, device_uid: u32) -> Result<Self, DeserializationError> {
+    pub const fn new(manufacturer_uid: u16, device_uid: u32) -> Result<Self, DeserializationError> {
         if device_uid == u32::MAX || manufacturer_uid == u16::MAX {
             return Err(DeserializationError);
         }

@@ -66,6 +66,7 @@ impl TryFrom<u16> for DmxStartAddress {
 }
 
 /// Response to discovery mute/unmute requests.
+#[derive(Debug, Eq, PartialEq)]
 pub struct DiscoveryMuteResponse {
     /// The responder is a proxy device.
     pub managed_proxy: bool,

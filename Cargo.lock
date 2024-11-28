@@ -59,7 +59,7 @@ dependencies = [
 
 [[package]]
 name = "dmx-rdm"
-version = "0.0.12-alpha"
+version = "0.0.13-alpha"
 dependencies = [
  "binary-layout",
  "defmt",

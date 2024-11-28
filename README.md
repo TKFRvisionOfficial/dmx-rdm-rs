@@ -8,6 +8,13 @@ Please refer to the [official specifications](https://tsp.esta.org/) published b
 
 *This library is wip, it has not yet received extensive testing and the api might not be final.*
 
+## Currently available drivers
+| Platform                          | Driver                                                            | OS  | Embedded |
+|-----------------------------------|-------------------------------------------------------------------|-----|----------|
+| FTDI Uarts with RS485 Transceiver | [dmx-rdm-ftdi](https://crates.io/crates/dmx-rdm-ftdi)             | ✅   | ❌        |
+| Enttec DMX Pro                    | [dmx-rdm-enttec-pro](https://crates.io/crates/dmx-rdm-enttec-pro) | ✅   | ❌        |
+| RP2040 (Raspberry Pi Pico)        | [dmx-rdm-rp2040](https://crates.io/crates/dmx-rdm-rp2040)         | ❌   | ✅        |
+
 ## Usage
 These examples show the basic usage using the dmx-rdm-ftdi driver.
 These examples work together.
